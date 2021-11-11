@@ -1,0 +1,41 @@
+version: '3.9'
+
+services:
+    db:
+        image: mysql:5.7
+        environment:
+            MYSQL_DATABASE: '${DB_NAME:-test-auto}'
+            MYSQL_USER: '${DB_USER:-test-auto}'
+            MYSQL_PASSWORD: '${DB_PASS:-test-auto}'
+            MYSQL_RANDOM_ROOT_PASSWORD: 1
+        ports:
+            - '${DB_PORT:-3306}:3306'
+        volumes:
+            - db:/var/lib/mysql
+
+    app:
+        build:
+            context: .
+            dockerfile: ./docker/app/Dockerfile
+        extra_hosts:
+            host.docker.internal: host-gateway
+        volumes:
+            - .:/app
+        depends_on:
+            - db
+        environment:
+            PHP_IDE_CONFIG: '${PHP_IDE_CONFIG:-serverName=_}'
+
+    nginx:
+        build:
+            context: .
+            dockerfile: ./docker/nginx/Dockerfile
+        volumes:
+            - ./public:/app/public
+        ports:
+            - '${HTTP_PORT:-80}:80'
+        depends_on:
+            - app
+
+volumes:
+  db:
